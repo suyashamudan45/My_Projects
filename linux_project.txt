@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# [TASK 1] Set variables for target and destination directories
+targetDirectory=$1
+destinationDirectory=$2
+
+# [TASK 2] Display the values of the two command line arguments
+echo "Target Directory: $targetDirectory"
+echo "Destination Directory: $destinationDirectory"
+
+# [TASK 3] Define the current timestamp
+currentTS=$(date +%s)
+
+# [TASK 4] Define the backup file name with the current timestamp
+backupFileName="backup-$currentTS.tar.gz"
+
+# [TASK 5] Get the absolute path of the current working directory
+origAbsPath=$(pwd)
+
+# [TASK 6] Get the absolute path of the destination directory
+destAbsPath=$(realpath $destinationDirectory)
+
+# [TASK 7] Change to the target directory
+cd $targetDirectory || { echo "Target directory does not exist."; exit 1; }
+
+# [TASK 8] Calculate the timestamp for 24 hours ago
+yesterdayTS=$((currentTS - 86400))
+
+# Declare an array to store files that need to be backed up
+declare -a toBackup
+
+# [TASK 9] Loop through all files and directories in the current folder
+for file in $(ls); do
+    # [TASK 10] Check if the file was modified within the last 24 hours
+    file_last_modified_date=$(date -r "$file" +%s)
+    if [[ $file_last_modified_date -gt $yesterdayTS ]]; then
+        # [TASK 11] Add the file to the toBackup array
+        toBackup+=("$file")
+    fi
+done
+
+# [TASK 12] Compress and archive the files into the backup file
+if [ ${#toBackup[@]} -gt 0 ]; then
+    tar -czf "$backupFileName" "${toBackup[@]}"
+    echo "Backup created: $backupFileName"
+else
+    echo "No files to back up."
+    exit 0
+fi
+
+# [TASK 13] Move the backup file to the destination directory
+mv "$backupFileName" "$destAbsPath" || { echo "Failed to move the backup file."; exit 1; }
+
+echo "Backup file moved to: $destAbsPath"
